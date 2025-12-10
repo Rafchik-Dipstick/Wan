@@ -68,11 +68,6 @@ else
     echo "Directory already exists, skipping move."
 fi
 
-echo "Downloading CivitAI download script to /usr/local/bin"
-git clone "https://github.com/Hearmeman24/CivitAI_Downloader.git" || { echo "Git clone failed"; exit 1; }
-mv CivitAI_Downloader/download_with_aria.py "/usr/local/bin/" || { echo "Move failed"; exit 1; }
-chmod +x "/usr/local/bin/download_with_aria.py" || { echo "Chmod failed"; exit 1; }
-rm -rf CivitAI_Downloader  # Clean up the cloned repo
 pip install onnxruntime-gpu &
 
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper" ]; then
@@ -314,70 +309,37 @@ if [ "$download_steady_dancer" == "true" ]; then
 fi
 
 # Download text encoders
-echo "Downloading text encoders..."
+if [ "$download_text_encoders" == "true" ]; then
+  echo "Downloading text encoders..."
 
-download_model "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors" "$TEXT_ENCODERS_DIR/open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors"
+  download_model "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors" "$TEXT_ENCODERS_DIR/open-clip-xlm-roberta-large-vit-huge-14_visual_fp16.safetensors"
+else
+  echo "Skipping text encoder downloads (download_text_encoders is not 'true')."
+fi
 
-# Create CLIP vision directory and download models
-mkdir -p "$CLIP_VISION_DIR"
-download_model "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors" "$CLIP_VISION_DIR/clip_vision_h.safetensors"
+# Create CLIP vision directory and optionally download models
+if [ "$download_clip_vision" == "true" ]; then
+  mkdir -p "$CLIP_VISION_DIR"
+  download_model "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors" "$CLIP_VISION_DIR/clip_vision_h.safetensors"
+else
+  echo "Skipping CLIP vision downloads (download_clip_vision is not 'true')."
+fi
 
-# Download detection models for WanAnimatePreprocess
-echo "Downloading detection models..."
-mkdir -p "$DETECTION_DIR"
-download_model "https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx" "$DETECTION_DIR/yolov10m.onnx"
-download_model "https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_data.bin" "$DETECTION_DIR/vitpose_h_wholebody_data.bin"
-download_model "https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_model.onnx" "$DETECTION_DIR/vitpose_h_wholebody_model.onnx"
+# Optionally download detection models for WanAnimatePreprocess
+if [ "$download_detection_models" == "true" ]; then
+  echo "Downloading detection models..."
+  mkdir -p "$DETECTION_DIR"
+  download_model "https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx" "$DETECTION_DIR/yolov10m.onnx"
+  download_model "https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_data.bin" "$DETECTION_DIR/vitpose_h_wholebody_data.bin"
+  download_model "https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_model.onnx" "$DETECTION_DIR/vitpose_h_wholebody_model.onnx"
+else
+  echo "Skipping detection model downloads (download_detection_models is not 'true')."
+fi
 
-# Keep checking until no aria2c processes are running
 while pgrep -x "aria2c" > /dev/null; do
-    echo "🔽 Model Downloads still in progress..."
+    echo "🔽 Model downloads still in progress..."
     sleep 5  # Check every 5 seconds
 done
-
-declare -A MODEL_CATEGORIES=(
-    ["$NETWORK_VOLUME/ComfyUI/models/checkpoints"]="$CHECKPOINT_IDS_TO_DOWNLOAD"
-    ["$NETWORK_VOLUME/ComfyUI/models/loras"]="$LORAS_IDS_TO_DOWNLOAD"
-)
-
-# Counter to track background jobs
-download_count=0
-
-# Ensure directories exist and schedule downloads in background
-for TARGET_DIR in "${!MODEL_CATEGORIES[@]}"; do
-    mkdir -p "$TARGET_DIR"
-    MODEL_IDS_STRING="${MODEL_CATEGORIES[$TARGET_DIR]}"
-
-    # Skip if the value is the default placeholder
-    if [[ "$MODEL_IDS_STRING" == "replace_with_ids" ]]; then
-        echo "⏭️  Skipping downloads for $TARGET_DIR (default value detected)"
-        continue
-    fi
-
-    IFS=',' read -ra MODEL_IDS <<< "$MODEL_IDS_STRING"
-
-    for MODEL_ID in "${MODEL_IDS[@]}"; do
-        sleep 1
-        echo "🚀 Scheduling download: $MODEL_ID to $TARGET_DIR"
-        (cd "$TARGET_DIR" && download_with_aria.py -m "$MODEL_ID") &
-        ((download_count++))
-    done
-done
-
-echo "📋 Scheduled $download_count downloads in background"
-
-# Wait for all downloads to complete
-echo "⏳ Waiting for downloads to complete..."
-while pgrep -x "aria2c" > /dev/null; do
-    echo "🔽 LoRA Downloads still in progress..."
-    sleep 5  # Check every 5 seconds
-done
-
-
-echo "✅ All models downloaded successfully!"
-
-echo "All downloads completed!"
-
 
 echo "Downloading upscale models"
 mkdir -p "$NETWORK_VOLUME/ComfyUI/models/upscale_models"
