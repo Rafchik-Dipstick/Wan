@@ -212,7 +212,14 @@ download_model() {
 
     mkdir -p "$destination_dir"
 
-    # Simple corruption check: file < 10MB or .aria2 files
+    # Check for .aria2 control files FIRST (means incomplete download)
+    if [ -f "${full_path}.aria2" ]; then
+        echo "🗑️  Incomplete download detected (.aria2 exists): ${full_path}"
+        rm -f "${full_path}.aria2"
+        rm -f "$full_path"
+    fi
+
+    # Simple corruption check: file < 10MB
     if [ -f "$full_path" ]; then
         local size_bytes=$(stat -f%z "$full_path" 2>/dev/null || stat -c%s "$full_path" 2>/dev/null || echo 0)
         local size_mb=$((size_bytes / 1024 / 1024))
@@ -224,13 +231,6 @@ download_model() {
             echo "✅ $destination_file already exists (${size_mb}MB), skipping download."
             return 0
         fi
-    fi
-
-    # Check for and remove .aria2 control files
-    if [ -f "${full_path}.aria2" ]; then
-        echo "🗑️  Deleting .aria2 control file: ${full_path}.aria2"
-        rm -f "${full_path}.aria2"
-        rm -f "$full_path"  # Also remove any partial file
     fi
 
     echo "📥 Downloading $destination_file to $destination_dir..."
