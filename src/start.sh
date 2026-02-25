@@ -202,6 +202,9 @@ export change_preview_method="true"
 # Change to the directory
 cd "$CUSTOM_NODES_DIR" || exit 1
 
+# Track all background model download jobs so startup can wait for them.
+MODEL_DOWNLOAD_PIDS=()
+
 # Function to download a model using huggingface-cli
 download_model() {
     local url="$1"
@@ -237,8 +240,10 @@ download_model() {
 
     # Download without falloc (since it's not supported in your environment)
     aria2c -x 16 -s 16 -k 1M --continue=true -d "$destination_dir" -o "$destination_file" "$url" &
+    local download_pid=$!
+    MODEL_DOWNLOAD_PIDS+=("$download_pid")
 
-    echo "Download started in background for $destination_file"
+    echo "Download started in background for $destination_file (PID: $download_pid)"
 }
 
 # Define base paths
@@ -388,12 +393,6 @@ download_model "https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/pr
 download_model "https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_data.bin" "$DETECTION_DIR/vitpose_h_wholebody_data.bin"
 download_model "https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_model.onnx" "$DETECTION_DIR/vitpose_h_wholebody_model.onnx"
 
-# Keep checking until no aria2c processes are running
-while pgrep -x "aria2c" > /dev/null; do
-    echo "🔽 Model Downloads still in progress..."
-    sleep 5  # Check every 5 seconds
-done
-
 declare -A MODEL_CATEGORIES=(
     ["$NETWORK_VOLUME/ComfyUI/models/checkpoints"]="$CHECKPOINT_IDS_TO_DOWNLOAD"
     ["$NETWORK_VOLUME/ComfyUI/models/loras"]="$LORAS_IDS_TO_DOWNLOAD"
@@ -419,6 +418,7 @@ for TARGET_DIR in "${!MODEL_CATEGORIES[@]}"; do
         sleep 1
         echo "🚀 Scheduling download: $MODEL_ID to $TARGET_DIR"
         (cd "$TARGET_DIR" && download_with_aria.py -m "$MODEL_ID") &
+        MODEL_DOWNLOAD_PIDS+=("$!")
         ((download_count++))
     done
 done
@@ -426,11 +426,26 @@ done
 echo "📋 Scheduled $download_count downloads in background"
 
 # Wait for all downloads to complete
-echo "⏳ Waiting for downloads to complete..."
+echo "⏳ Waiting for all model downloads to complete..."
+download_failures=0
+
+for pid in "${MODEL_DOWNLOAD_PIDS[@]}"; do
+    if ! wait "$pid"; then
+        echo "❌ Download process failed (PID: $pid)"
+        download_failures=1
+    fi
+done
+
+# Safety guard in case any downloader spawned detached aria2c children.
 while pgrep -x "aria2c" > /dev/null; do
-    echo "🔽 LoRA Downloads still in progress..."
+    echo "🔽 Detached aria2c process still running..."
     sleep 5  # Check every 5 seconds
 done
+
+if [ "$download_failures" -ne 0 ]; then
+    echo "❌ One or more model downloads failed. Aborting ComfyUI startup."
+    exit 1
+fi
 
 
 echo "✅ All models downloaded successfully!"
