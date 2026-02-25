@@ -247,6 +247,13 @@ VAE_DIR="$NETWORK_VOLUME/ComfyUI/models/vae"
 LORAS_DIR="$NETWORK_VOLUME/ComfyUI/models/loras"
 DETECTION_DIR="$NETWORK_VOLUME/ComfyUI/models/detection"
 
+# Download custom identity LoRAs
+echo "Downloading custom identity LoRAs..."
+download_model "https://huggingface.co/rafaelkras/stacy/resolve/main/lora_stacy_high_body.safetensors" "$LORAS_DIR/lora_stacy_high_body.safetensors"
+download_model "https://huggingface.co/rafaelkras/stacy/resolve/main/lora_stacy_low_face.safetensors" "$LORAS_DIR/lora_stacy_low_face.safetensors"
+download_model "https://huggingface.co/rafaelkras/megan/resolve/main/high_noise_lora_megan_body.safetensors" "$LORAS_DIR/high_noise_lora_megan_body.safetensors"
+download_model "https://huggingface.co/rafaelkras/megan/resolve/main/low_noise_lora_megan_face.safetensors" "$LORAS_DIR/low_noise_lora_megan_face.safetensors"
+
 # Download 480p native models
 if [ "$download_480p_native_models" == "true" ]; then
   echo "Downloading 480p native models..."
