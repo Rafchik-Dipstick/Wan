@@ -44,6 +44,7 @@ PIN_WAN22_FMLF="7140cd2"
 echo "Starting SageAttention build..."
 (
     export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
+    . /opt/venv/bin/activate
     cd /tmp
     git clone https://github.com/thu-ml/SageAttention.git
     cd SageAttention
