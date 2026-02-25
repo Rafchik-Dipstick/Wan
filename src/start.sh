@@ -466,6 +466,21 @@ else
     echo "4xLSDIR.pth already exists. Skipping."
 fi
 
+UPSCALE_DIR="$NETWORK_VOLUME/ComfyUI/models/upscale_models"
+if [ ! -f "$UPSCALE_DIR/1xSkinContrast-SuperUltraCompact.pth" ]; then
+    echo "Downloading 1xSkinContrast-SuperUltraCompact.pth..."
+    wget -q -O "$UPSCALE_DIR/1xSkinContrast-SuperUltraCompact.pth" \
+        "https://huggingface.co/Kim2091/AnimeSharp/resolve/main/1xSkinContrast-SuperUltraCompact.pth"
+fi
+
+RIFE_DIR="$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-Frame-Interpolation/ckpts/rife49"
+if [ ! -f "$RIFE_DIR/rife49.pth" ]; then
+    echo "Downloading rife49.pth..."
+    mkdir -p "$RIFE_DIR"
+    wget -q -O "$RIFE_DIR/rife49.pth" \
+        "https://huggingface.co/MachineDelusions/RIFE/resolve/main/rife49.pth"
+fi
+
 echo "Finished downloading models!"
 
 
