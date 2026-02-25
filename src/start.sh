@@ -49,7 +49,7 @@ echo "Starting SageAttention build..."
     git clone https://github.com/thu-ml/SageAttention.git
     cd SageAttention
     git reset --hard $PIN_SAGE_ATTENTION
-    pip install -e .
+    pip install --no-build-isolation .
     echo "SageAttention build completed" > /tmp/sage_build_done
 ) > /tmp/sage_build.log 2>&1 &
 SAGE_PID=$!
