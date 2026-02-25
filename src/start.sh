@@ -88,6 +88,7 @@ mv CivitAI_Downloader/download_with_aria.py "/usr/local/bin/" || { echo "Move fa
 chmod +x "/usr/local/bin/download_with_aria.py" || { echo "Chmod failed"; exit 1; }
 rm -rf CivitAI_Downloader  # Clean up the cloned repo
 pip install onnxruntime-gpu &
+pip install --force-reinstall "sentencepiece==0.2.0" &
 
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
