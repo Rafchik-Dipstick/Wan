@@ -27,6 +27,19 @@ else
     echo "curl is already installed"
 fi
 
+# ============================================================
+# Pinned commit hashes (update these to upgrade node versions)
+# ============================================================
+PIN_SAGE_ATTENTION="d1a57a5"
+PIN_WAN_VIDEO_WRAPPER="df8f3e4"
+PIN_KJ_NODES="debc470"
+PIN_VIBE_VOICE="99a9803"
+PIN_WAN_ANIMATE_PREPROCESS="1a35b81"
+PIN_FSAMPLER="5479059"
+PIN_WAN_MOE_SCHEDULER="a2d601a"
+PIN_VAE_UTILS="41d1903"
+PIN_WAN22_FMLF="7140cd2"
+
 # Start SageAttention build in the background
 echo "Starting SageAttention build..."
 (
@@ -34,7 +47,7 @@ echo "Starting SageAttention build..."
     cd /tmp
     git clone https://github.com/thu-ml/SageAttention.git
     cd SageAttention
-    git reset --hard 68de379
+    git reset --hard $PIN_SAGE_ATTENTION
     pip install -e .
     echo "SageAttention build completed" > /tmp/sage_build_done
 ) > /tmp/sage_build.log 2>&1 &
@@ -78,76 +91,89 @@ pip install onnxruntime-gpu &
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
     git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git
+    cd ComfyUI-WanVideoWrapper
+    git reset --hard $PIN_WAN_VIDEO_WRAPPER
 else
     echo "Updating WanVideoWrapper"
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper
-    git pull
+    git fetch && git reset --hard $PIN_WAN_VIDEO_WRAPPER
 fi
+
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-KJNodes" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
     git clone https://github.com/kijai/ComfyUI-KJNodes.git
-    cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-KJNodes
-    git reset --hard 204f6d5
+    cd ComfyUI-KJNodes
+    git reset --hard $PIN_KJ_NODES
 else
     echo "Updating KJ Nodes"
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-KJNodes
-    git pull
-    git reset --hard 204f6d5
+    git fetch && git reset --hard $PIN_KJ_NODES
 fi
 
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-VibeVoice" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
     git clone https://github.com/wildminder/ComfyUI-VibeVoice.git
+    cd ComfyUI-VibeVoice
+    git reset --hard $PIN_VIBE_VOICE
 else
     echo "Updating VibeVoice"
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-VibeVoice
-    git pull
+    git fetch && git reset --hard $PIN_VIBE_VOICE
 fi
 
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-WanAnimatePreprocess" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
     git clone https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git
+    cd ComfyUI-WanAnimatePreprocess
+    git reset --hard $PIN_WAN_ANIMATE_PREPROCESS
 else
     echo "Updating WanAnimatePreprocess"
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-WanAnimatePreprocess
-    git pull
+    git fetch && git reset --hard $PIN_WAN_ANIMATE_PREPROCESS
 fi
-
 
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-FSampler" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
     git clone https://github.com/obisin/ComfyUI-FSampler.git
+    cd ComfyUI-FSampler
+    git reset --hard $PIN_FSAMPLER
 else
     echo "Updating FSampler"
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-FSampler
-    git pull
+    git fetch && git reset --hard $PIN_FSAMPLER
 fi
 
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-WanMoEScheduler" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
     git clone https://github.com/cmeka/ComfyUI-WanMoEScheduler.git
+    cd ComfyUI-WanMoEScheduler
+    git reset --hard $PIN_WAN_MOE_SCHEDULER
 else
     echo "Updating WanMoEScheduler"
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-WanMoEScheduler
-    git pull
+    git fetch && git reset --hard $PIN_WAN_MOE_SCHEDULER
 fi
 
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-VAE-Utils" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
     git clone https://github.com/lrzjason/ComfyUI-VAE-Utils.git
+    cd ComfyUI-VAE-Utils
+    git reset --hard $PIN_VAE_UTILS
 else
     echo "Updating VAE Utils"
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-VAE-Utils
-    git pull
+    git fetch && git reset --hard $PIN_VAE_UTILS
 fi
 
 if [ ! -d "$NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-Wan22FMLF" ]; then
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes
     git clone https://github.com/wallen0322/ComfyUI-Wan22FMLF.git
+    cd ComfyUI-Wan22FMLF
+    git reset --hard $PIN_WAN22_FMLF
 else
     echo "Updating Wan22FMLF"
     cd $NETWORK_VOLUME/ComfyUI/custom_nodes/ComfyUI-Wan22FMLF
-    git pull
+    git fetch && git reset --hard $PIN_WAN22_FMLF
 fi
 
 
@@ -262,7 +288,7 @@ if [ "$download_wan22" == "true" ]; then
   download_model "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors" "$DIFFUSION_MODELS_DIR/wan2.2_ti2v_5B_fp16.safetensors"
 
   download_model "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors" "$VAE_DIR/wan2.2_vae.safetensors"
-  
+
 fi
 
 
